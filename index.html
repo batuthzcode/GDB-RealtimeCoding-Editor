@@ -1,1 +1,240 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thz Kod Derleyici | Collaborative AI</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes neonPulse { 0% { text-shadow: 0 0 5px #58a6ff, 0 0 10px #58a6ff; } 50% { text-shadow: 0 0 2px #58a6ff, 0 0 5px #2ea043; } 100% { text-shadow: 0 0 5px #58a6ff, 0 0 10px #58a6ff; } }
 
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; background-color: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        #header { padding: 12px 24px; background-color: #161b22; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; z-index: 10; animation: fadeInDown 0.8s ease-out; }
+        .brand { display: flex; align-items: center; gap: 15px; }
+        .brand h2 { margin: 0; font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: 1px; font-family: 'Courier New', Courier, monospace; }
+        .thz-text { color: #58a6ff; animation: neonPulse 2s infinite alternate; }
+        
+        .room-controls { display: flex; align-items: center; gap: 8px; margin-left: 20px; }
+        .room-info { font-size: 11px; color: #58a6ff; background: #0d1117; padding: 6px 12px; border-radius: 6px; border: 1px solid #30363d; font-weight: bold; }
+        .input-dark { background: #21262d; border: 1px solid #30363d; color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; outline: none; width: 110px; }
+        .input-dark:focus { border-color: #58a6ff; }
+
+        .btn-green-plus { background: #238636; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 18px; padding: 0; border: none; cursor: pointer; transition: 0.2s; }
+        .btn-green-plus:hover { background: #2ea043; transform: scale(1.1); }
+
+        .controls { display: flex; align-items: center; gap: 12px; }
+        select { background-color: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 8px 16px; border-radius: 6px; font-size: 14px; cursor: pointer; outline: none; }
+        
+        button { padding: 8px 16px; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease; }
+        .btn-run { background-color: #238636; }
+        .btn-ai { background-color: #8e44ad; }
+        .btn-join { background-color: #30363d; border: 1px solid #484f58; font-size: 11px; padding: 6px 10px; }
+
+        #main { display: flex; flex: 1; overflow: hidden; animation: fadeInUp 0.8s ease-out; }
+        #editor-container { flex: 6; border-right: 1px solid #30363d; }
+        #right-panel { flex: 4; display: flex; flex-direction: column; background-color: #010409; }
+        
+        .panel-header { padding: 10px 20px; background-color: #161b22; border-bottom: 1px solid #30363d; font-size: 12px; font-weight: 600; text-transform: uppercase; color: #8b949e; }
+        
+        #user-presence-bar { padding: 10px 20px; background: #0d1117; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 10px; overflow-x: auto; min-height: 45px; }
+        .active-dot { width: 8px; height: 8px; background: #238636; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 5px #238636; }
+        .user-tag { font-size: 12px; background: #21262d; border: 1px solid #30363d; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+
+        #input-text { flex: 1; background-color: #0d1117; color: #c9d1d9; border: none; padding: 15px 20px; font-family: 'Fira Code', monospace; font-size: 14px; resize: none; outline: none; }
+        #output-text { flex: 2; padding: 20px; font-family: 'Fira Code', monospace; font-size: 14px; overflow-y: auto; white-space: pre-wrap; color: #7ee787; border-top: 1px solid #30363d; }
+    </style>
+</head>
+<body>
+
+    <div id="header">
+        <div class="brand">
+            <h2><span class="thz-text">Thz</span> Coding</h2>
+            <div class="room-controls">
+                <div id="room-display" class="room-info">ODA: GENEL</div>
+                <input type="text" id="username-input" class="input-dark" placeholder="Adınız...">
+                <input type="text" id="room-input" class="input-dark" placeholder="Oda ID...">
+                <button class="btn-join" onclick="joinRoomManually()">GİRİŞ</button>
+                <button class="btn-green-plus" title="Yeni Oda Oluştur" onclick="createNewRoom()">+</button>
+            </div>
+        </div>
+        <div class="controls">
+            <select id="language-select" onchange="changeLanguage()">
+                <option value="python">Python</option>
+                <option value="csharp">C#</option>
+                <option value="cpp">C++</option>
+                <option value="java">Java</option>
+                <option value="javascript">JavaScript</option>
+                <option value="go">Go</option>
+                <option value="php">PHP</option>
+            </select>
+            <button class="btn-ai" id="ai-btn" onclick="askAI()">AI Düzelt</button>
+            <button class="btn-run" id="run-btn" onclick="runCode()">Çalıştır</button>
+        </div>
+    </div>
+
+    <div id="main">
+        <div id="editor-container"></div>
+        <div id="right-panel">
+            <div class="panel-header">Çevrimiçi Yazarlar</div>
+            <div id="user-presence-bar">
+                <span style="font-size: 11px; color: #8b949e;">Lütfen adınızı girip giriş yapın.</span>
+            </div>
+            
+            <div class="panel-header">Girdi (STDIN)</div>
+            <textarea id="input-text" placeholder="Girdileri buraya yazın..."></textarea>
+            
+            <div class="panel-header">Terminal</div>
+            <div id="output-text">Sistem hazır.</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs/loader.min.js"></script>
+    <script>
+        const socket = io({ transports: ['polling'] });
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentRoom = urlParams.get('oda') || 'GENEL';
+        
+        document.getElementById('username-input').value = localStorage.getItem('thz-nick') || '';
+        document.getElementById('room-input').value = currentRoom === 'GENEL' ? '' : currentRoom;
+        document.getElementById('room-display').innerText = `ODA: ${currentRoom.toUpperCase()}`;
+
+        window.onload = () => {
+            const savedNick = localStorage.getItem('thz-nick');
+            if(savedNick) {
+                socket.emit('join-room', { roomId: currentRoom, username: savedNick });
+            }
+        };
+
+        function joinRoomManually() {
+            const nick = document.getElementById('username-input').value.trim();
+            const room = document.getElementById('room-input').value.trim() || 'GENEL';
+            if(!nick) { alert("Lütfen bir ad girin!"); return; }
+            localStorage.setItem('thz-nick', nick);
+            window.location.href = `?oda=${room}`;
+        }
+
+        function createNewRoom() {
+            const randomId = Math.random().toString(36).substring(2, 8);
+            const nick = document.getElementById('username-input').value.trim();
+            if(nick) localStorage.setItem('thz-nick', nick);
+            window.location.href = `?oda=${randomId}`;
+        }
+
+        socket.on('user-list-update', (users) => {
+            const bar = document.getElementById('user-presence-bar');
+            bar.innerHTML = users.map(u => `<div class="user-tag"><span class="active-dot"></span>${u.name}</div>`).join('');
+        });
+
+        const defaultCodes = {
+            python: 'print("Thz sistemine hoş geldin!")',
+            csharp: 'using System;\nclass Program {\n    static void Main() {\n        Console.WriteLine("C# ortamına hoş geldin!");\n    }\n}',
+            cpp: '#include <iostream>\nusing namespace std;\nint main() {\n    cout << "C++ aktif!" << endl;\n    return 0;\n}',
+            java: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Java aktif.");\n    }\n}',
+            javascript: 'console.log("JavaScript motoru çalışıyor.");',
+            go: 'package main\nimport "fmt"\nfunc main() {\n    fmt.Println("Go devrede.")\n}',
+            php: '<?php\necho "PHP sunucusu aktif.\\n";\n?>'
+        };
+
+        const jdoodleLangs = { python: 'python3', csharp: 'csharp', cpp: 'cpp', java: 'java', javascript: 'nodejs', go: 'go', php: 'php' };
+
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            window.editor = monaco.editor.create(document.getElementById('editor-container'), {
+                value: defaultCodes['python'],
+                language: 'python',
+                theme: 'vs-dark', automaticLayout: true, fontSize: 15
+            });
+
+            let isRemoteChange = false;
+            window.editor.onDidChangeModelContent(() => {
+                if (!isRemoteChange) {
+                    socket.emit('code-update', { roomId: currentRoom, code: window.editor.getValue() });
+                }
+            });
+
+            socket.on('code-sync', (newCode) => {
+                if (window.editor.getValue() !== newCode) {
+                    isRemoteChange = true;
+                    const pos = window.editor.getPosition();
+                    window.editor.setValue(newCode);
+                    window.editor.setPosition(pos);
+                    isRemoteChange = false;
+                }
+            });
+        });
+
+        function changeLanguage() {
+            const lang = document.getElementById("language-select").value;
+            monaco.editor.setModelLanguage(window.editor.getModel(), lang);
+            window.editor.setValue(defaultCodes[lang]);
+        }
+
+        async function askAI() {
+            const codeContent = window.editor.getValue();
+            const btn = document.getElementById('ai-btn');
+            if(!codeContent) return;
+            
+            btn.innerText = "⏳...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch("/ai-fix", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ code: codeContent })
+                });
+
+                const data = await response.json();
+                
+                // Groq API'den gelen veriyi kontrol ediyoruz
+                let fixed = data.fixedCode || data.output;
+                
+                if (fixed) {
+                    // Markdown bloklarını (```) temizleme
+                    const cleanCode = fixed.replace(/```[a-z]*\n/gi, '').replace(/```/g, '').trim();
+                    window.editor.setValue(cleanCode);
+                } else {
+                    alert("AI yanıtı okunamadı: " + (data.details || "Bilinmeyen hata"));
+                }
+            } catch (e) { 
+                console.error("AI Hatası:", e);
+                alert("AI ile bağlantı kurulamadı.");
+            } finally { 
+                btn.innerText = "AI Düzelt"; 
+                btn.disabled = false;
+            }
+        }
+
+        async function runCode() {
+            const out = document.getElementById('output-text');
+            const btn = document.getElementById('run-btn');
+            const langKey = document.getElementById("language-select").value;
+            out.innerText = "🚀 Çalıştırılıyor...\n";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch("/compile", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        script: window.editor.getValue(), 
+                        language: jdoodleLangs[langKey], 
+                        stdin: document.getElementById("input-text").value 
+                    })
+                });
+                const data = await res.json();
+                // Sunucudan gelen data.output değerini basıyoruz
+                out.innerText = data.output || "İşlem tamamlandı, çıktı yok.";
+            } catch (e) { 
+                out.innerText = "❌ Hata: Derleme sunucusuna ulaşılamadı.";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

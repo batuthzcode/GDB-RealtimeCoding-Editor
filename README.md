@@ -1,4 +1,9 @@
 # GDB-RealtimeCoding-Editor
+
+<p align="center">
+  <img src="thze.png" alt="Thz Coding Editor Logo" width="100%" />
+</p>
+
 # 🚀 GDB - Real-Time Multi-Language Code Editor & AI Optimizer
 
 [English](#english) | [Turkish](#turkish) | [Installation](#installation)
@@ -68,7 +73,7 @@ Bu projeyi doğrudan web sitenizde (hosting üzerinde) çalıştırmak için aş
 
 1. **Dosyaları Yükleyin:**
    * Hosting panelinize (cPanel/Plesk vb.) giriş yapın ve `Dosya Yöneticisi`ni açın.
-   * Projedeki tüm dosyaları (`index.html`, `server.js`, `derle.php`, `package.json`) ana dizine (genellikle `public_html`) yükleyin.
+   * Projedeki tüm dosyaları (`index.html`, `server.js`, `derle.php`, `package.json`, `thze.png`, `thzf.gif`) ana dizine (genellikle `public_html`) yükleyin.
 
 2. **Node.js Uygulamasını Başlatın:**
    * Hosting panelinizden **"Setup Node.js App"** (Node.js Uygulaması Kur/Yapılandır) menüsüne girin.
@@ -90,7 +95,7 @@ Follow these steps to deploy the project directly to your web hosting environmen
 
 1. **Upload Files:**
    * Log in to your hosting control panel (cPanel/Plesk, etc.) and open the `File Manager`.
-   * Upload all project files (`index.html`, `server.js`, `derle.php`, `package.json`) to your root directory (usually `public_html`).
+   * Upload all project files (`index.html`, `server.js`, `derle.php`, `package.json`, `thze.png`, `thzf.gif`) to your root directory (usually `public_html`).
 
 2. **Setup Node.js App:**
    * Navigate to the **"Setup Node.js App"** section in your hosting panel.

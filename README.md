@@ -52,5 +52,4 @@ Bir Siber Güvenlik öğrencisi olarak güvenlik önceliğimdir. Bu depo, projen
 ---
 
 ### 📸 Screenshots
-*(Buraya yüklediğin ekran görüntülerinden en iyisini ekleyebilirsin)*
-![Main UI](ekran_goruntusu_adi.png)
+!(thzf.gif)
